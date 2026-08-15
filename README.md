@@ -44,15 +44,15 @@ The Hyperodactyl Daemon is a lightweight agent that runs on each node server. It
 
 ```bash
 cd /etc/
-git clone https://github.com/xAyan55/hyperodacty-daemon.git daemon
-cd daemon
+git clone https://github.com/xAyan55/hyperodacty-daemon.git
+cd hyperodacty-daemon
 ```
 
 ### Step 2 — Set permissions
 
 ```bash
-sudo chown -R www-data:www-data /etc/daemon
-sudo chmod -R 755 /etc/daemon
+sudo chown -R www-data:www-data /etc/hyperodacty-daemon
+sudo chmod -R 755 /etc/hyperodacty-daemon
 ```
 
 ### Step 3 — Install and build
