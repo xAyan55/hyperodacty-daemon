@@ -44,7 +44,7 @@ The Hyperodactyl Daemon is a lightweight agent that runs on each node server. It
 
 ```bash
 cd /etc/
-git clone https://github.com/xAyan55/hyperodacty-daemon.git
+git clone https://github.com/xAyan55/hyperodacty-daemon.git daemon
 cd daemon
 ```
 
@@ -71,7 +71,7 @@ bun run build
 ### Step 5 — Start
 
 ```bash
-./airlinkd
+./hyperodactyld
 ```
 
 Or with the built binary:
