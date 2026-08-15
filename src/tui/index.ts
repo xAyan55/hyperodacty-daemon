@@ -77,13 +77,12 @@ const BORDER = '#374151';
 const BORDER_FOCUS = '#4ADE80';
 
 const ART = [
-  '  /$$$$$$ /$$         /$$/$$         /$$      ',
-  ' /$$__  $|__/        | $|__/        | $$      ',
-  '| $$  \\ $$/$$ /$$$$$$| $$/$$/$$$$$$$| $$   /$$',
-  '| $$$$$$$| $$/$$__  $| $| $| $$__  $| $$  /$$/',
-  '| $$__  $| $| $$  \\__| $| $| $$  \\ $| $$$$$$/ ',
-  '| $$  | $| $| $$     | $| $| $$  | $| $$_  $$ ',
-  '|__/  |__|__|__/     |__|__|__/  |__|__/  \\__/',
+  ' _   _                          _            _ _ ',
+  '| | | |_   _ _ __   ___ _ __ __| | ___   ___| | |',
+  '| |_| | | | | \'_ \\ / _ \\ \'__/ _` |/ _ \\ / __| | |',
+  '|  _  | |_| | |_) |  __/ | | (_| | (_) | (__| | |',
+  '|_| |_|\\__, | .__/ \\___|_|  \\__,_|\\___/ \\___|_|_|',
+  '       |___/|_|                                  ',
 ];
 
 function parseEnvFile(path: string): Record<string, string> {
@@ -281,7 +280,7 @@ function brandMetaLines(d: DaemonInfo | null): { text: string; fg: string }[] {
   const pid = d?.pid ? String(d.pid) : '–';
   const up = d?.uptimeSec != null ? ` · up ${fmtDur(d.uptimeSec)}` : '';
   return [
-    { text: `Airlinkd v${VERSION} · AirlinkLabs · MIT`, fg: BLUE },
+    { text: `Hyperodactyl Daemon v${VERSION} · MIT`, fg: BLUE },
     { text: `Mode: ${mode} · PID: ${pid}${up}`, fg: BLUE },
     { text: `Port: ${DAEMON_PORT} · Panel: ${REMOTE}`, fg: BLUE },
   ];
@@ -385,7 +384,7 @@ export async function runTui(): Promise<void> {
       paddingY: 1,
       borderStyle: 'rounded',
       borderColor: BORDER,
-      title: 'Airlink Daemon',
+      title: 'Hyperodactyl Daemon',
       titleColor: GREEN,
     },
     Box({ id: 'art-box', flexDirection: 'column' }, Text({ content: ART.join('\n'), fg: GREEN })),

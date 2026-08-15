@@ -2,20 +2,20 @@
 > # This project is a work in progress and is highly unstable
 > It is not recommended for production use. APIs, features, and data may break, change, or disappear at any time. Use at your own risk.
 
-# Airlink Daemon
+# Hyperodactyl Daemon
 
 **The thing that actually runs your game servers -_-**
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Bun](https://img.shields.io/badge/Bun-141323?style=for-the-badge&logo=bun&logoColor=white)
-[![License](https://img.shields.io/github/license/AirlinkLabs/daemon)](https://github.com/AirlinkLabs/daemon/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/xAyan55/hyperodacty-daemon)](https://github.com/xAyan55/hyperodacty-daemon/blob/main/LICENSE)
 [![Discord](https://img.shields.io/discord/1302020587316707420)](https://discord.gg/ujXyxwwMHc)
 
 ---
 
 ## What is this?
 
-The Airlink Daemon is a lightweight agent that runs on each node server. It listens for commands from the panel, manages Docker containers, streams console output, handles file operations, and exposes SFTP access. It does the dirty work so the panel can stay pretty -_-
+The Hyperodactyl Daemon is a lightweight agent that runs on each node server. It listens for commands from the panel, manages Docker containers, streams console output, handles file operations, and exposes SFTP access. It does the dirty work so the panel can stay pretty -_-
 
 **What it handles:**
 - Container lifecycle (create, start, stop, kill, delete)
@@ -44,7 +44,7 @@ The Airlink Daemon is a lightweight agent that runs on each node server. It list
 
 ```bash
 cd /etc/
-git clone https://github.com/AirlinkLabs/daemon.git
+git clone https://github.com/xAyan55/hyperodacty-daemon.git
 cd daemon
 ```
 
@@ -64,7 +64,7 @@ bun run build
 
 ### Step 4 — Register with the panel
 
-1. Log into your Airlink Panel as an admin
+1. Log into your Hyperodactyl Panel as an admin
 2. Go to **Admin → Nodes → Create**
 3. Copy the configure command and paste it in the terminal
 
@@ -167,7 +167,7 @@ The panel is the brain. The daemon is the hands. Together, they run your game se
 
 ## Links
 
-- Panel: [github.com/airlinklabs/panel](https://github.com/airlinklabs/panel)
+- Panel: [github.com/xAyan55/hyperodacty-panel](https://github.com/xAyan55/hyperodacty-panel)
 - Website: [airlinklabs.xyz](https://airlinklabs.xyz/)
 - Docs: [airlinklabs.xyz/docs/quick-start](https://airlinklabs.xyz/docs/quick-start/)
 - Discord: [discord.gg/ujXyxwwMHc](https://discord.gg/ujXyxwwMHc)

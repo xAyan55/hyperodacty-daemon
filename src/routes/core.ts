@@ -27,7 +27,7 @@ export function handleRoot(_req: Request): Response {
   return new Response(
     JSON.stringify({
       versionFamily: 1,
-      versionRelease: `Airlinkd ${daemonVersion}`,
+      versionRelease: `Hyperodactyl Daemon ${daemonVersion}`,
       status: 'Online',
       remote: config.remote,
     }),

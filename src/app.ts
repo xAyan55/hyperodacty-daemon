@@ -5,7 +5,7 @@ import { parseEnvFile } from './utils/parseEnv';
 
 function printHelp(): void {
   const bin = process.argv[1]?.split('/').pop() || 'airlinkd';
-  console.log(`Airlink daemon
+  console.log(`Hyperodactyl Daemon
 
 Usage:
   ${bin}                  Run the supervised TUI (starts the daemon, shows logs)
@@ -127,7 +127,7 @@ async function cmdStatus(): Promise<void> {
 }
 
 async function cmdVersion(): Promise<void> {
-  console.log(`airlinkd ${readVersion(findDaemonDir())}`);
+  console.log(`Hyperodactyl Daemon v${readVersion(findDaemonDir())}`);
 }
 
 export async function runDaemon(cliArgs: string[]): Promise<void> {

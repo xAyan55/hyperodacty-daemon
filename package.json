@@ -1,6 +1,11 @@
 {
-  "name": "airlinkd",
+  "name": "hyperodactyld",
   "version": "3.0.46",
+  "description": "Hyperodactyl Daemon",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xAyan55/hyperodacty-daemon"
+  },
   "module": "src/app.ts",
   "type": "module",
   "scripts": {
