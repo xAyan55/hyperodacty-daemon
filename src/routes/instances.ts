@@ -34,6 +34,8 @@ import {
 } from '../handlers/logHistory';
 import { enqueueOperation, getOperation } from '../handlers/operationManager';
 import logger from '../logger';
+import { RuntimeResolver } from '../handlers/runtimeResolver';
+import { createLxcContainer } from '../handlers/lxc/lxcLifecycle';
 import {
   backupBodyCodes,
   backupBodySchema,
@@ -51,6 +53,8 @@ import {
   killDeleteBodySchema,
   logArchiveDownloadBodyCodes,
   logArchiveDownloadBodySchema,
+  lxcCreateBodyCodes,
+  lxcCreateBodySchema,
   parseJsonBody,
   reinstallBodyCodes,
   reinstallBodySchema,
@@ -361,10 +365,43 @@ export async function handleContainerInstallStatus(_req: Request, params: Record
   return json({ containerId: id, state: status.state, error: status.error });
 }
 
+export async function handleContainerLxcCreate(req: Request): Promise<Response> {
+  const parsed = await parseJsonBody(req, lxcCreateBodySchema, lxcCreateBodyCodes);
+  if ('response' in parsed) return parsed.response;
+  const data = parsed.data;
+
+  try {
+    await setServerState(data.id, 'installing');
+    await createLxcContainer({
+      id: data.id,
+      distribution: data.distribution,
+      release: data.release,
+      architecture: data.architecture || 'amd64',
+      hostname: data.hostname,
+      memoryMb: data.memoryMb,
+      cpuQuota: data.cpuQuota,
+      storageMb: data.storageMb,
+      swapMb: data.swapMb,
+      bridge: data.bridge,
+      ipv4: data.ipv4,
+      gateway: data.gateway,
+      nameservers: data.nameservers,
+      sshAuthorizedKeys: data.sshAuthorizedKeys,
+      unprivileged: data.unprivileged ?? true,
+    });
+    await setServerState(data.id, 'installed');
+    return json({ success: true, message: `LXC container ${data.id} created successfully` });
+  } catch (error) {
+    logger.error('Error creating LXC container:', error);
+    await setServerState(data.id, 'failed', error instanceof Error ? error.message : String(error));
+    return apiError('internal_error', error instanceof Error ? error.message : `failed to create LXC container ${data.id}`, 500);
+  }
+}
+
 export async function handleContainerStart(req: Request): Promise<Response> {
   const parsed = await parseJsonBody(req, startBodySchema, startBodyCodes);
   if ('response' in parsed) return parsed.response;
-  const { id, image, ports, env, Memory, Cpu, Storage, Swap, StartCommand, mounts, configFiles } = parsed.data;
+  const { id, image, runtimeType, lxcConfig, ports, env, Memory, Cpu, Storage, Swap, StartCommand, mounts, configFiles } = parsed.data;
 
   const envVars: Record<string, string> = typeof env === 'object' && env !== null ? { ...env } : {};
 
@@ -391,20 +428,22 @@ export async function handleContainerStart(req: Request): Promise<Response> {
 
   try {
     clearLogBuffer(id);
-    await startContainer(
-      id,
+    await RuntimeResolver.start(id, {
+      runtimeType,
       image,
-      envVars,
-      ports ?? '',
-      Memory ?? 512,
-      Cpu ?? 100,
-      Storage ?? 0,
-      Swap ?? 0,
-      mounts ?? [],
-    );
+      ports: ports ?? '',
+      env: envVars,
+      Memory: Memory ?? 512,
+      Cpu: Cpu ?? 100,
+      Storage: Storage ?? 0,
+      Swap: Swap ?? 0,
+      StartCommand: updatedCmd,
+      mounts: mounts ?? [],
+      lxcConfig,
+    });
     await saveStartConfig({
       id,
-      image,
+      image: image || 'lxc',
       ports,
       env: envVars,
       Memory,
@@ -442,18 +481,7 @@ export async function handleContainerRestart(req: Request): Promise<Response> {
     if (cached.configFiles && typeof cached.configFiles === 'object') {
       await applyConfigFiles(body.id, cached.configFiles, cached.env ?? {});
     }
-    await stopContainer(body.id, body.stopCmd);
-    await startContainer(
-      body.id,
-      cached.image,
-      cached.env ?? {},
-      cached.ports ?? '',
-      cached.Memory ?? 512,
-      cached.Cpu ?? 100,
-      cached.Storage ?? 0,
-      cached.Swap ?? 0,
-      cached.mounts ?? [],
-    );
+    await RuntimeResolver.restart(body.id, body.stopCmd);
     return json({ message: `container ${body.id} restarted successfully` });
   } catch (error) {
     logger.error('error restarting container', error);
@@ -471,7 +499,7 @@ export async function handleContainerStop(req: Request): Promise<Response> {
   const body = parsed.data;
 
   try {
-    await stopContainer(body.id, body.stopCmd);
+    await RuntimeResolver.stop(body.id, body.stopCmd);
     return json({ message: `container ${body.id} stopped successfully` });
   } catch (err) {
     logger.error('error stopping container', err);
@@ -486,7 +514,7 @@ export async function handleContainerKill(req: Request): Promise<Response> {
   const { id } = parsed.data;
 
   try {
-    await killContainer(id);
+    await RuntimeResolver.kill(id);
     return json({ message: `container ${id} killed` });
   } catch (err) {
     logger.error('error killing container', err);
@@ -499,13 +527,12 @@ export async function handleContainerCommand(req: Request): Promise<Response> {
   if ('response' in parsed) return parsed.response;
   const { id, command } = parsed.data;
 
-  // Canonical shape per D-005: { id, command } only. The data/value/payload/args
-  // fallbacks were undocumented compatibility shims and are gone.
+  // Canonical shape per D-005: { id, command } only.
   const normalized = (command ?? '').replace(/\r\n?/g, '\n').trim();
   if (!normalized) return apiError('invalid_request', 'container command is required', 400);
 
   try {
-    await sendCommandToContainer(id, normalized);
+    await RuntimeResolver.sendCommand(id, normalized);
     return json({ message: `command sent to container ${id}` });
   } catch (err) {
     logger.error('error sending command', err);
@@ -519,7 +546,7 @@ export async function handleContainerDelete(req: Request): Promise<Response> {
   const { id } = parsed.data;
 
   try {
-    await deleteContainerAndVolume(id);
+    await RuntimeResolver.delete(id);
     clearLogHistory(id);
     return json({ message: `container ${id} deleted` });
   } catch (err) {
@@ -604,31 +631,15 @@ export async function handleContainerLogArchiveDownloadToken(req: Request): Prom
 }
 
 export async function handleContainerStatus(req: Request): Promise<Response> {
-  const id = new URL(req.url).searchParams.get('id');
+  const url = new URL(req.url);
+  const id = url.searchParams.get('id');
+  const runtimeType = url.searchParams.get('runtimeType') || undefined;
   if (!id) return apiError('container_not_found', 'container ID is required', 400);
   if (!validateContainerId(id)) return apiError('container_not_found', 'invalid container ID', 400);
 
   try {
-    const knownRunning = isContainerRunning(id);
-    if (knownRunning !== null) {
-      return json({ running: knownRunning, exists: true, source: 'cache' });
-    }
-
-    const info = await docker
-      .getContainer(id)
-      .inspect()
-      .catch(() => null);
-    if (!info) return json({ running: false, exists: false });
-
-    return json({
-      running: info.State.Running,
-      exists: true,
-      status: info.State.Status,
-      exitCode: typeof info.State.ExitCode === 'number' ? info.State.ExitCode : null,
-      startedAt: info.State.StartedAt,
-      finishedAt: info.State.FinishedAt,
-      source: 'inspect',
-    });
+    const status = await RuntimeResolver.getStatus(id, runtimeType);
+    return json(status);
   } catch (err) {
     logger.error('error getting container status', err);
     return apiError('internal_error', `failed to get status for container ${id}`, 500);
@@ -636,12 +647,14 @@ export async function handleContainerStatus(req: Request): Promise<Response> {
 }
 
 export async function handleContainerStats(req: Request): Promise<Response> {
-  const id = new URL(req.url).searchParams.get('id');
+  const url = new URL(req.url);
+  const id = url.searchParams.get('id');
+  const runtimeType = url.searchParams.get('runtimeType') || undefined;
   if (!id) return apiError('container_not_found', 'container ID is required', 400);
   if (!validateContainerId(id)) return apiError('container_not_found', 'invalid container ID', 400);
 
   try {
-    const stats = await getContainerStats(id);
+    const stats = await RuntimeResolver.getStats(id, runtimeType);
     if (!stats) return json({ running: false, exists: false });
     return json(stats);
   } catch (err) {

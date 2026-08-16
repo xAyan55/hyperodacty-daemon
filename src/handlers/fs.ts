@@ -7,10 +7,14 @@ import config from '../config';
 import { getPaths } from '../paths';
 import { validatePublicUrl } from '../router';
 import { jailPath, jailRename } from '../security/pathJail';
-import fileSpecifier from '../utils/fileSpecifier';
+import { isLxcContainer } from './lxc/lxcDiscovery';
+import { getLxcContainerName, getLxcRootfsPath } from './lxc/lxcConfig';
 
 /** Resolve a container's volume root from the centralised paths. */
-function volumeRoot(id: string): string {
+export function volumeRoot(id: string): string {
+  if (isLxcContainer(id)) {
+    return getLxcRootfsPath(getLxcContainerName(id));
+  }
   return join(getPaths(config.paths).volumesRoot, id);
 }
 

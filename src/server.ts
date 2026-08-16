@@ -1,5 +1,7 @@
 import config from './config';
 import { checkDocker, checkDockerRunning, docker, initContainerStateMap } from './handlers/docker';
+import { detectLxcCapabilities } from './handlers/lxc/lxcCapabilities';
+import { discoverLxcContainers } from './handlers/lxc/lxcDiscovery';
 import { startNativeSftpServer } from './handlers/nativeSftp';
 import { startBackgroundLogCollector } from './handlers/logHistory';
 import { shutdownOperations } from './handlers/operationManager';
@@ -93,6 +95,14 @@ try {
 } catch (err) {
   logger.error('docker is not ready, so container actions are paused for now', err instanceof Error ? err : new Error(String(err)));
 }
+
+try {
+  await detectLxcCapabilities();
+  await discoverLxcContainers();
+} catch (err) {
+  logger.warn('lxc startup discovery encountered an issue:', err);
+}
+
 initStatsCollection();
 startBackgroundLogCollector(docker).catch((err) => {
   logger.error('failed to start background log collector', err instanceof Error ? err : new Error(String(err)));

@@ -45,6 +45,7 @@ import {
   handleContainerLogArchives,
   handleContainerLogHistory,
   handleContainerLogs,
+  handleContainerLxcCreate,
   handleContainerReinstall,
   handleContainerRestart,
   handleContainerRestore,
@@ -57,19 +58,24 @@ import { handleMinecraftPlayers } from './routes/minecraft';
 import { handleRadarScan, handleRadarZip } from './routes/radar';
 import { handleSftpActivity, handleSftpCreate, handleSftpRevoke, handleSftpStatus } from './routes/sftp';
 import { checkBasicAuth, getAllowedIpCheck, verifyHmac, withSecurityHeaders } from './security/hmac';
-import { checkRateLimit } from './security/rateLimit';
+import { detectLxcCapabilities } from './handlers/lxc/lxcCapabilities';
 
 type Handler = (req: Request, params: Record<string, string>) => Promise<Response> | Response;
 
 const exactRoutes = new Map<string, Handler>([
   ['GET /', handleRoot],
   ['GET /stats', handleStats],
-  ['GET /capabilities', (_req) => {
+  ['GET /capabilities', async (_req) => {
     const caps = docker.capabilities();
-    return new Response(JSON.stringify(caps), {
+    const lxcCaps = await detectLxcCapabilities();
+    return new Response(JSON.stringify({
+      ...caps,
+      lxc: lxcCaps,
+    }), {
       headers: { 'Content-Type': 'application/json' },
     });
   }],
+  ['POST /container/lxc/create', handleContainerLxcCreate],
   ['POST /container/installer', handleContainerInstaller],
   ['POST /container/install', handleContainerInstall],
   ['POST /container/reinstall', handleContainerReinstall],

@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { ServerWebSocket } from 'bun';
 import config from '../config';
-import { sendCommandToContainer } from '../handlers/docker';
+import { RuntimeResolver } from '../handlers/runtimeResolver';
 import logger from '../logger';
 import { attachToContainer } from './attach';
 import { subscribe } from './events';
@@ -300,7 +300,7 @@ export function wsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffer): vo
       ws.send(JSON.stringify({ error: 'missing command' }));
       return;
     }
-    sendCommandToContainer(ws.data.containerId, command).catch((err) => {
+    RuntimeResolver.sendCommand(ws.data.containerId, command).catch((err) => {
       logger.error(`command send failed for ${ws.data.containerId}`, err);
       if (ws.readyState === 1) {
         ws.send(

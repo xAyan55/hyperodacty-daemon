@@ -51,10 +51,12 @@ export const reinstallBodyCodes = installBodyCodes;
 
 export const startBodySchema = z.object({
   id: z
-    .string({ error: 'container ID and image are required' })
-    .min(1, 'container ID and image are required')
+    .string({ error: 'container ID is required' })
+    .min(1, 'container ID is required')
     .refine(validateContainerId, 'invalid container ID'),
-  image: z.string({ error: 'container ID and image are required' }).min(1, 'container ID and image are required'),
+  image: z.string().optional(),
+  runtimeType: z.string().optional(),
+  lxcConfig: z.record(z.string(), z.unknown()).optional(),
   ports: z.string().optional(),
   env: z.record(z.string(), z.string()).optional(),
   Memory: z.number().optional(),
@@ -70,7 +72,26 @@ export const startBodySchema = z.object({
     )
     .optional(),
 });
-export const startBodyCodes = { id: 'container_not_found', image: 'container_not_found' } as const;
+export const startBodyCodes = { id: 'container_not_found' } as const;
+
+export const lxcCreateBodySchema = z.object({
+  id: containerIdSchema,
+  distribution: z.string({ error: 'distribution is required' }).min(1, 'distribution is required'),
+  release: z.string({ error: 'release is required' }).min(1, 'release is required'),
+  architecture: z.string().optional(),
+  hostname: z.string().optional(),
+  memoryMb: z.number().optional(),
+  cpuQuota: z.number().optional(),
+  storageMb: z.number().optional(),
+  swapMb: z.number().optional(),
+  bridge: z.string().optional(),
+  ipv4: z.string().optional(),
+  gateway: z.string().optional(),
+  nameservers: z.array(z.string()).optional(),
+  sshAuthorizedKeys: z.array(z.string()).optional(),
+  unprivileged: z.boolean().optional(),
+});
+export const lxcCreateBodyCodes = { id: 'container_not_found' } as const;
 
 export const containerIdBodySchema = z.object({ id: containerIdSchema, stopCmd: z.string().optional() });
 export const containerIdBodyCodes = { id: 'container_not_found' } as const;
