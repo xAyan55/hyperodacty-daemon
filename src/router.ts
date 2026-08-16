@@ -58,6 +58,7 @@ import { handleMinecraftPlayers } from './routes/minecraft';
 import { handleRadarScan, handleRadarZip } from './routes/radar';
 import { handleSftpActivity, handleSftpCreate, handleSftpRevoke, handleSftpStatus } from './routes/sftp';
 import { checkBasicAuth, getAllowedIpCheck, verifyHmac, withSecurityHeaders } from './security/hmac';
+import { checkRateLimit } from './security/rateLimit';
 import { detectLxcCapabilities } from './handlers/lxc/lxcCapabilities';
 
 type Handler = (req: Request, params: Record<string, string>) => Promise<Response> | Response;

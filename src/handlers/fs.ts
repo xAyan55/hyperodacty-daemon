@@ -7,6 +7,7 @@ import config from '../config';
 import { getPaths } from '../paths';
 import { validatePublicUrl } from '../router';
 import { jailPath, jailRename } from '../security/pathJail';
+import fileSpecifier from '../utils/fileSpecifier';
 import { isLxcContainer } from './lxc/lxcDiscovery';
 import { getLxcContainerName, getLxcRootfsPath } from './lxc/lxcConfig';
 
