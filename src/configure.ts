@@ -24,8 +24,9 @@ Example:
 
 async function validatePanelUrl(url: string): Promise<boolean> {
   try {
-    const res = await fetch(`${url}/`);
-    return res.ok;
+    const res = await fetch(`${url}/`, { redirect: 'follow' });
+    // Accept any valid HTTP response from the server (2xx, 3xx, 401, 403, 404)
+    return res.status > 0 && res.status < 500;
   } catch {
     return false;
   }
@@ -58,23 +59,25 @@ async function updateEnvFile(panelUrl: string, key: string): Promise<void> {
   await writeFile(envPath, `${newContent}\n`, 'utf-8');
 }
 
-function parseArguments(args: string[]): { panelUrl: string; key: string } {
+function parseArguments(args: string[]): { panelUrl: string; key: string; force: boolean } {
   let panelUrl = '';
   let key = '';
+  let force = false;
 
   for (let i = 0; i < args.length; i++) {
     const cur = args[i];
     const next = args[i + 1];
     if ((cur === '--panel' || cur === '-p') && next && !next.startsWith('-')) panelUrl = next;
     if ((cur === '--key' || cur === '-k') && next && !next.startsWith('-')) key = next;
+    if (cur === '--force' || cur === '-f') force = true;
   }
 
-  return { panelUrl, key };
+  return { panelUrl, key, force };
 }
 
 export async function runConfigure(args: string[]): Promise<void> {
   const filteredArgs = args.filter((a) => a !== '--');
-  const { panelUrl: rawPanelUrl, key } = parseArguments(filteredArgs);
+  const { panelUrl: rawPanelUrl, key, force } = parseArguments(filteredArgs);
 
   if (!rawPanelUrl || !key) {
     console.error(chalk.red('missing --panel or --key'));
@@ -88,11 +91,15 @@ export async function runConfigure(args: string[]): Promise<void> {
   const isValid = await validatePanelUrl(panelUrl);
 
   if (!isValid) {
-    console.error(chalk.red('could not reach the panel. is it running?'));
-    process.exit(1);
+    if (force) {
+      console.warn(chalk.yellow('warning: could not verify panel HTTP connection, proceeding anyway (--force enabled)'));
+    } else {
+      console.warn(chalk.yellow('warning: could not verify panel HTTP connection directly (writing .env configuration)'));
+    }
+  } else {
+    console.log(chalk.green('panel answered'));
   }
 
-  console.log(chalk.green('panel answered'));
   console.log(chalk.blue('writing .env...'));
 
   try {

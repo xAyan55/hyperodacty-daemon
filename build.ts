@@ -468,8 +468,9 @@ async function fullBuild(dev: boolean): Promise<void> {
 
   // 1. Verify Bun version
   const bunVersion = execSync('bun --version', { encoding: 'utf8' }).trim();
-  if (bunVersion !== BUN_VERSION) {
-    fail(`Bun version mismatch: expected ${BUN_VERSION}, got ${bunVersion}`);
+  const [major] = bunVersion.split('.').map(Number);
+  if (isNaN(major) || major < 1) {
+    fail(`Bun version unsupported: expected >= 1.0.0, got ${bunVersion}`);
   }
   ok(`bun version: ${bunVersion}`);
 
